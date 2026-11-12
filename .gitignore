@@ -1,0 +1,9 @@
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+.DS_Store
+.env
+scripts/.env
+capturas/tmp/

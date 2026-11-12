@@ -1,0 +1,108 @@
+@base = http://localhost:5130/api
+
+### Propietarios: listar (200) y buscar por nombre o DNI
+GET {{base}}/propietarios
+###
+GET {{base}}/propietarios?busqueda=Flores
+
+### Propietario por id (200) y no existe (404)
+GET {{base}}/propietarios/1
+###
+GET {{base}}/propietarios/99
+
+### Ruta anidada: mascotas de un propietario (200 / 404)
+GET {{base}}/propietarios/2/mascotas
+###
+GET {{base}}/propietarios/99/mascotas
+
+### Crear propietario (201)
+POST {{base}}/propietarios
+Content-Type: application/json
+
+{ "dni": "48001122", "nombres": "Rosa", "apellidos": "Mendoza Vera", "telefono": "951753852", "correo": "rosa.mendoza@example.com" }
+
+### Crear propietario con DNI repetido (409)
+POST {{base}}/propietarios
+Content-Type: application/json
+
+{ "dni": "45127893", "nombres": "Otra", "apellidos": "Persona", "telefono": "999888777" }
+
+### Crear propietario con datos inválidos (400)
+POST {{base}}/propietarios
+Content-Type: application/json
+
+{ "dni": "12", "nombres": "", "apellidos": "X", "telefono": "1", "correo": "malo" }
+
+### Actualizar propietario (204) y no existe (404)
+PUT {{base}}/propietarios/2
+Content-Type: application/json
+
+{ "nombres": "Carlos Alberto", "apellidos": "Huamán Quispe", "telefono": "956321478", "correo": "carlos.huaman@example.com" }
+###
+PUT {{base}}/propietarios/99
+Content-Type: application/json
+
+{ "nombres": "Nadie", "apellidos": "Sin Registro", "telefono": "900000000" }
+
+### Eliminar propietario con mascotas (409), sin mascotas (204) y no existe (404)
+DELETE {{base}}/propietarios/1
+###
+DELETE {{base}}/propietarios/6
+###
+DELETE {{base}}/propietarios/99
+
+### Mascotas: listar (200) y filtrar por query string
+GET {{base}}/mascotas
+###
+GET {{base}}/mascotas?especie=Perro&pesoMin=10&pesoMax=30
+###
+GET {{base}}/mascotas?propietarioId=5
+
+### Mascota por id (200 / 404)
+GET {{base}}/mascotas/1
+###
+GET {{base}}/mascotas/99
+
+### Crear mascota (201)
+POST {{base}}/mascotas
+Content-Type: application/json
+
+{ "nombre": "Firulais", "especie": "Perro", "raza": "Mestizo", "sexo": "m", "fechaNacimiento": "2024-02-10", "pesoKg": 9.5, "propietarioId": 4 }
+
+### Crear mascota para un propietario con 5 mascotas (409)
+POST {{base}}/mascotas
+Content-Type: application/json
+
+{ "nombre": "Chispa", "especie": "Gato", "sexo": "H", "pesoKg": 3.2, "propietarioId": 1 }
+
+### Crear mascota inválida (400) y con propietario inexistente (400)
+POST {{base}}/mascotas
+Content-Type: application/json
+
+{ "nombre": "F", "especie": "Perro", "sexo": "x", "pesoKg": 0, "propietarioId": 2 }
+###
+POST {{base}}/mascotas
+Content-Type: application/json
+
+{ "nombre": "Chispa", "especie": "Gato", "sexo": "H", "pesoKg": 3.2, "propietarioId": 99 }
+
+### Actualizar mascota (204), no existe (404) y cambio a un dueño con 5 mascotas (409)
+PUT {{base}}/mascotas/7
+Content-Type: application/json
+
+{ "nombre": "Luna", "especie": "Gato", "raza": "Mestizo", "sexo": "H", "fechaNacimiento": "2022-07-09", "pesoKg": 4.1, "propietarioId": 2 }
+###
+PUT {{base}}/mascotas/99
+Content-Type: application/json
+
+{ "nombre": "Nadie", "especie": "Gato", "sexo": "H", "pesoKg": 4.1, "propietarioId": 2 }
+###
+PUT {{base}}/mascotas/6
+Content-Type: application/json
+
+{ "nombre": "Max", "especie": "Perro", "raza": "Pastor alemán", "sexo": "M", "fechaNacimiento": "2020-01-25", "pesoKg": 34, "propietarioId": 1 }
+
+### Eliminar mascota (204) y no existe (404)
+DELETE {{base}}/mascotas/12
+###
+DELETE {{base}}/mascotas/99

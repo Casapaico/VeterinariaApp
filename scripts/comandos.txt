@@ -1,0 +1,43 @@
+COMANDOS USADOS (VS Code, terminal integrada)
+────────────────────────────────────────────────────────────────────────────
+# Solución y proyectos
+dotnet new sln -n Veterinaria
+dotnet new classlib -n Veterinaria.Entidades
+dotnet new classlib -n Veterinaria.Datos
+dotnet new classlib -n Veterinaria.Negocio
+dotnet new webapi -n Veterinaria.Api --use-controllers
+dotnet sln add Veterinaria.Entidades Veterinaria.Datos Veterinaria.Negocio Veterinaria.Api
+
+# Referencias en cadena: Api -> Negocio -> Datos -> Entidades
+dotnet add Veterinaria.Api reference Veterinaria.Negocio
+dotnet add Veterinaria.Negocio reference Veterinaria.Datos
+dotnet add Veterinaria.Datos reference Veterinaria.Entidades
+
+# Paquetes (EF Core en versión 10)
+dotnet add Veterinaria.Datos package Microsoft.EntityFrameworkCore.SqlServer --version "10.*"
+dotnet add Veterinaria.Api package Microsoft.EntityFrameworkCore.Design --version "10.*"
+dotnet add Veterinaria.Api package Swashbuckle.AspNetCore.SwaggerUI
+dotnet add Veterinaria.Negocio package AutoMapper
+
+# Base de datos (SQL Server local)
+./scripts/cargar-bd.sh            # ejecuta db/VeterinariaDB.sql
+
+# Modelo con Scaffold (base de datos primero)
+./scripts/scaffold.sh             # dotnet ef dbcontext scaffold ... --project Veterinaria.Datos
+                                  #   --startup-project Veterinaria.Api --output-dir Models
+                                  #   --context VeterinariaContext --no-onconfiguring --force
+
+# Ejecutar
+cd Veterinaria.Api
+dotnet user-secrets set "ConnectionStrings:Veterinaria" "Server=localhost,1433;Database=VeterinariaDB;User Id=sa;Password=...;TrustServerCertificate=True"
+dotnet run --launch-profile http  # http://localhost:5130/swagger
+
+
+NOTAS
+────────────────────────────────────────────────────────────────────────────
+- Después del Scaffold, Mascota.cs y Propietario.cs se movieron de
+  Veterinaria.Datos/Models a Veterinaria.Entidades (namespace
+  Veterinaria.Entidades) y VeterinariaContext.cs a la raíz de Veterinaria.Datos.
+- La colección Propietario.Mascota se renombró a Mascotas.
+- Las entidades no llevan [JsonIgnore]: la API solo devuelve DTOs.
+- AutoMapper 16 muestra una advertencia de licencia en el log: es normal en desarrollo.
