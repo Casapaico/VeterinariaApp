@@ -11,6 +11,7 @@ namespace Veterinaria.Api.Controllers;
 [Route("api/[controller]")]
 [Produces("application/json")]
 [Authorize]     // S14: por defecto, todos los endpoints exigen un token válido (401 sin él)
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class PropietariosController(
     IPropietarioServicio servicio,
     IMascotaServicio mascotas) : ControllerBase
@@ -45,7 +46,6 @@ public class PropietariosController(
 
     // POST api/propietarios
     [Authorize(Roles = Roles.Recepcionista)]   // con otro rol: 403
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [HttpPost]
     [ProducesResponseType<PropietarioDto>(StatusCodes.Status201Created)]
@@ -66,7 +66,6 @@ public class PropietariosController(
 
     // PUT api/propietarios/5
     [Authorize(Roles = Roles.Recepcionista)]   // con otro rol: 403
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -79,7 +78,6 @@ public class PropietariosController(
 
     // DELETE api/propietarios/5
     [Authorize(Roles = Roles.Recepcionista)]   // con otro rol: 403
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

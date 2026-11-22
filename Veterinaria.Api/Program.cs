@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -15,6 +16,7 @@ builder.Services.AddControllers();
 
 // OpenAPI con el esquema "Bearer": habilita el botón Authorize de Swagger
 builder.Services.AddOpenApi(options =>
+{
     options.AddDocumentTransformer((document, context, ct) =>
     {
         document.Components ??= new OpenApiComponents();
@@ -28,12 +30,25 @@ builder.Services.AddOpenApi(options =>
                 Description = "Pega el token del login (sin la palabra Bearer)"
             }
         };
-        document.Security = [new OpenApiSecurityRequirement
-        {
-            [new OpenApiSecuritySchemeReference("Bearer", document)] = []
-        }];
         return Task.CompletedTask;
-    }));
+    });
+
+    // El candado solo aparece en los endpoints que piden token ([Authorize] sin [AllowAnonymous]);
+    // así registro y login se ven públicos en Swagger, igual que en la matriz de permisos
+    options.AddOperationTransformer((operation, context, ct) =>
+    {
+        var metadata = context.Description.ActionDescriptor.EndpointMetadata;
+        if (metadata.OfType<IAuthorizeData>().Any() && !metadata.OfType<IAllowAnonymous>().Any())
+        {
+            operation.Security ??= [];
+            operation.Security.Add(new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecuritySchemeReference("Bearer", context.Document)] = []
+            });
+        }
+        return Task.CompletedTask;
+    });
+});
 
 // La cadena de conexión y la clave del token no están en el repositorio: en local van en user-secrets
 // (dotnet user-secrets set "ConnectionStrings:Veterinaria" "..." / "Jwt:Clave" "...")
