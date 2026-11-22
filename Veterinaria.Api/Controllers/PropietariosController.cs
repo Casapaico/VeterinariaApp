@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Veterinaria.Entidades.Dtos;
 using Veterinaria.Negocio.Excepciones;
+using Veterinaria.Negocio.Seguridad;
 using Veterinaria.Negocio.Servicios;
 
 namespace Veterinaria.Api.Controllers;
@@ -8,6 +10,7 @@ namespace Veterinaria.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize]     // S14: por defecto, todos los endpoints exigen un token válido (401 sin él)
 public class PropietariosController(
     IPropietarioServicio servicio,
     IMascotaServicio mascotas) : ControllerBase
@@ -41,6 +44,9 @@ public class PropietariosController(
     }
 
     // POST api/propietarios
+    [Authorize(Roles = Roles.Recepcionista)]   // con otro rol: 403
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [HttpPost]
     [ProducesResponseType<PropietarioDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -59,6 +65,9 @@ public class PropietariosController(
     }
 
     // PUT api/propietarios/5
+    [Authorize(Roles = Roles.Recepcionista)]   // con otro rol: 403
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -69,6 +78,9 @@ public class PropietariosController(
     }
 
     // DELETE api/propietarios/5
+    [Authorize(Roles = Roles.Recepcionista)]   // con otro rol: 403
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

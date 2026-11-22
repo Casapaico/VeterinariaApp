@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Veterinaria.Entidades.Dtos;
 using Veterinaria.Negocio.Excepciones;
+using Veterinaria.Negocio.Seguridad;
 using Veterinaria.Negocio.Servicios;
 
 namespace Veterinaria.Api.Controllers;
@@ -8,6 +10,7 @@ namespace Veterinaria.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize]     // S14: por defecto, todos los endpoints exigen un token válido (401 sin él)
 public class MascotasController(IMascotaServicio servicio) : ControllerBase
 {
     // GET api/mascotas?especie=Perro&pesoMin=10&pesoMax=30&propietarioId=1&raza=&nombre=
@@ -29,6 +32,9 @@ public class MascotasController(IMascotaServicio servicio) : ControllerBase
     }
 
     // POST api/mascotas
+    [Authorize(Roles = Roles.Recepcionista)]   // registra la mascota al llegar a la clínica
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [HttpPost]
     [ProducesResponseType<MascotaDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -52,6 +58,10 @@ public class MascotasController(IMascotaServicio servicio) : ControllerBase
     }
 
     // PUT api/mascotas/5
+    // Varios roles separados por coma = cualquiera de ellos
+    [Authorize(Roles = Roles.Recepcionista + "," + Roles.Veterinario)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -75,6 +85,9 @@ public class MascotasController(IMascotaServicio servicio) : ControllerBase
     }
 
     // DELETE api/mascotas/5
+    [Authorize(Roles = Roles.Veterinario)]     // la baja de una mascota la decide el veterinario
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

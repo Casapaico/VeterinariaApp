@@ -1,108 +1,206 @@
 @base = http://localhost:5130/api
+# S14: pega aquí los tokens que devuelve el login (sin la palabra Bearer)
+@tokenAsistente = pega-aqui-el-token
+@tokenRecepcion = pega-aqui-el-token
+@tokenVeterinario = pega-aqui-el-token
+
+### ================= Autenticación (S14) =================
+### Login de cada rol (200). Clave de prueba de los tres: Vet2026*
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "correo": "asistente@vetarequipa.com", "clave": "Vet2026*" }
+###
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "correo": "recepcion@vetarequipa.com", "clave": "Vet2026*" }
+###
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "correo": "veterinario@vetarequipa.com", "clave": "Vet2026*" }
+
+### Login con clave incorrecta y con correo inexistente: el mismo 401
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "correo": "asistente@vetarequipa.com", "clave": "otra" }
+###
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "correo": "nadie@vetarequipa.com", "clave": "Vet2026*" }
+
+### Registro (201, rol Asistente), correo repetido (409) y datos inválidos (400)
+POST {{base}}/auth/registro
+Content-Type: application/json
+
+{ "correo": "practicante@vetarequipa.com", "clave": "Clave2026*" }
+###
+POST {{base}}/auth/registro
+Content-Type: application/json
+
+{ "correo": "recepcion@vetarequipa.com", "clave": "Clave2026*" }
+###
+POST {{base}}/auth/registro
+Content-Type: application/json
+
+{ "correo": "malo", "clave": "123" }
+
+### Perfil: sin token (401) y con token (200, datos tomados de los claims)
+GET {{base}}/auth/perfil
+###
+GET {{base}}/auth/perfil
+Authorization: Bearer {{tokenVeterinario}}
+
+### Sin token (401) / Asistente creando un propietario (403) / Veterinario borrando una mascota (204)
+GET {{base}}/propietarios
+###
+POST {{base}}/propietarios
+Content-Type: application/json
+Authorization: Bearer {{tokenAsistente}}
+
+{ "dni": "48001122", "nombres": "Rosa", "apellidos": "Mendoza Vera", "telefono": "951753852" }
+###
+DELETE {{base}}/mascotas/12
+Authorization: Bearer {{tokenVeterinario}}
+
+### ================= Endpoints de la S13 =================
+# Lectura: cualquier token. Alta/edición/baja de propietarios y alta de mascotas: tokenRecepcion.
+# Editar mascota: tokenRecepcion o tokenVeterinario. Borrar mascota: tokenVeterinario.
 
 ### Propietarios: listar (200) y buscar por nombre o DNI
 GET {{base}}/propietarios
+Authorization: Bearer {{tokenAsistente}}
 ###
 GET {{base}}/propietarios?busqueda=Flores
+Authorization: Bearer {{tokenAsistente}}
 
 ### Propietario por id (200) y no existe (404)
 GET {{base}}/propietarios/1
+Authorization: Bearer {{tokenAsistente}}
 ###
 GET {{base}}/propietarios/99
+Authorization: Bearer {{tokenAsistente}}
 
 ### Ruta anidada: mascotas de un propietario (200 / 404)
 GET {{base}}/propietarios/2/mascotas
+Authorization: Bearer {{tokenAsistente}}
 ###
 GET {{base}}/propietarios/99/mascotas
+Authorization: Bearer {{tokenAsistente}}
 
 ### Crear propietario (201)
 POST {{base}}/propietarios
+Authorization: Bearer {{tokenRecepcion}}
 Content-Type: application/json
 
 { "dni": "48001122", "nombres": "Rosa", "apellidos": "Mendoza Vera", "telefono": "951753852", "correo": "rosa.mendoza@example.com" }
 
 ### Crear propietario con DNI repetido (409)
 POST {{base}}/propietarios
+Authorization: Bearer {{tokenRecepcion}}
 Content-Type: application/json
 
 { "dni": "45127893", "nombres": "Otra", "apellidos": "Persona", "telefono": "999888777" }
 
 ### Crear propietario con datos inválidos (400)
 POST {{base}}/propietarios
+Authorization: Bearer {{tokenRecepcion}}
 Content-Type: application/json
 
 { "dni": "12", "nombres": "", "apellidos": "X", "telefono": "1", "correo": "malo" }
 
 ### Actualizar propietario (204) y no existe (404)
 PUT {{base}}/propietarios/2
+Authorization: Bearer {{tokenRecepcion}}
 Content-Type: application/json
 
 { "nombres": "Carlos Alberto", "apellidos": "Huamán Quispe", "telefono": "956321478", "correo": "carlos.huaman@example.com" }
 ###
 PUT {{base}}/propietarios/99
+Authorization: Bearer {{tokenRecepcion}}
 Content-Type: application/json
 
 { "nombres": "Nadie", "apellidos": "Sin Registro", "telefono": "900000000" }
 
 ### Eliminar propietario con mascotas (409), sin mascotas (204) y no existe (404)
 DELETE {{base}}/propietarios/1
+Authorization: Bearer {{tokenRecepcion}}
 ###
 DELETE {{base}}/propietarios/6
+Authorization: Bearer {{tokenRecepcion}}
 ###
 DELETE {{base}}/propietarios/99
+Authorization: Bearer {{tokenRecepcion}}
 
 ### Mascotas: listar (200) y filtrar por query string
 GET {{base}}/mascotas
+Authorization: Bearer {{tokenAsistente}}
 ###
 GET {{base}}/mascotas?especie=Perro&pesoMin=10&pesoMax=30
+Authorization: Bearer {{tokenAsistente}}
 ###
 GET {{base}}/mascotas?propietarioId=5
+Authorization: Bearer {{tokenAsistente}}
 
 ### Mascota por id (200 / 404)
 GET {{base}}/mascotas/1
+Authorization: Bearer {{tokenAsistente}}
 ###
 GET {{base}}/mascotas/99
+Authorization: Bearer {{tokenAsistente}}
 
 ### Crear mascota (201)
 POST {{base}}/mascotas
+Authorization: Bearer {{tokenRecepcion}}
 Content-Type: application/json
 
 { "nombre": "Firulais", "especie": "Perro", "raza": "Mestizo", "sexo": "m", "fechaNacimiento": "2024-02-10", "pesoKg": 9.5, "propietarioId": 4 }
 
 ### Crear mascota para un propietario con 5 mascotas (409)
 POST {{base}}/mascotas
+Authorization: Bearer {{tokenRecepcion}}
 Content-Type: application/json
 
 { "nombre": "Chispa", "especie": "Gato", "sexo": "H", "pesoKg": 3.2, "propietarioId": 1 }
 
 ### Crear mascota inválida (400) y con propietario inexistente (400)
 POST {{base}}/mascotas
+Authorization: Bearer {{tokenRecepcion}}
 Content-Type: application/json
 
 { "nombre": "F", "especie": "Perro", "sexo": "x", "pesoKg": 0, "propietarioId": 2 }
 ###
 POST {{base}}/mascotas
+Authorization: Bearer {{tokenRecepcion}}
 Content-Type: application/json
 
 { "nombre": "Chispa", "especie": "Gato", "sexo": "H", "pesoKg": 3.2, "propietarioId": 99 }
 
 ### Actualizar mascota (204), no existe (404) y cambio a un dueño con 5 mascotas (409)
 PUT {{base}}/mascotas/7
+Authorization: Bearer {{tokenVeterinario}}
 Content-Type: application/json
 
 { "nombre": "Luna", "especie": "Gato", "raza": "Mestizo", "sexo": "H", "fechaNacimiento": "2022-07-09", "pesoKg": 4.1, "propietarioId": 2 }
 ###
 PUT {{base}}/mascotas/99
+Authorization: Bearer {{tokenVeterinario}}
 Content-Type: application/json
 
 { "nombre": "Nadie", "especie": "Gato", "sexo": "H", "pesoKg": 4.1, "propietarioId": 2 }
 ###
 PUT {{base}}/mascotas/6
+Authorization: Bearer {{tokenVeterinario}}
 Content-Type: application/json
 
 { "nombre": "Max", "especie": "Perro", "raza": "Pastor alemán", "sexo": "M", "fechaNacimiento": "2020-01-25", "pesoKg": 34, "propietarioId": 1 }
 
 ### Eliminar mascota (204) y no existe (404)
 DELETE {{base}}/mascotas/12
+Authorization: Bearer {{tokenVeterinario}}
 ###
 DELETE {{base}}/mascotas/99
+Authorization: Bearer {{tokenVeterinario}}

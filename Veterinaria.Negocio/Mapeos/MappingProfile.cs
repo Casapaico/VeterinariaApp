@@ -36,5 +36,10 @@ public class MappingProfile : Profile
         // DTO de entrada -> Entidad existente (actualización con Map(origen, destino))
         CreateMap<MascotaActualizarDto, Mascota>()
             .ForMember(d => d.Sexo, o => o.MapFrom(s => s.Sexo.ToUpper()));
+
+        // ---------- Usuario (S14) ----------
+
+        // Entidad -> DTO de salida del registro: sin ClaveHash
+        CreateMap<Usuario, UsuarioDto>();
     }
 }

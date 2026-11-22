@@ -17,6 +17,8 @@ public partial class VeterinariaContext : DbContext
 
     public virtual DbSet<Propietario> Propietarios { get; set; }
 
+    public virtual DbSet<Usuario> Usuarios { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Mascota>(entity =>
@@ -56,6 +58,23 @@ public partial class VeterinariaContext : DbContext
             entity.Property(e => e.Telefono)
                 .HasMaxLength(15)
                 .IsUnicode(false);
+        });
+
+        // S14: tabla Usuarios (db/Usuarios.sql)
+        modelBuilder.Entity<Usuario>(entity =>
+        {
+            entity.HasIndex(e => e.Correo, "UQ_Usuarios_Correo").IsUnique();
+
+            entity.Property(e => e.Correo).HasMaxLength(100);
+            entity.Property(e => e.ClaveHash)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.Rol)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.FechaRegistro)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(sysdatetime())", "DF_Usuarios_FechaRegistro");
         });
 
         OnModelCreatingPartial(modelBuilder);
