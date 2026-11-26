@@ -1,0 +1,108 @@
+# Semana 15: todas las llamadas entran por el GATEWAY.
+# Local: inicia Veterinaria.Api (5130), VacunasApi (5140) y GatewayApi (5100).
+# Nube: cambia @gateway por https://vetarequipa-gateway.onrender.com (el primer request puede tardar ~1 min).
+@gateway = http://localhost:5100
+# @gateway = https://vetarequipa-gateway.onrender.com
+
+### 1. Login como Recepcionista (200): guarda el token en {{rec}}
+# @name loginRec
+POST {{gateway}}/gateway/auth/login
+Content-Type: application/json
+
+{ "correo": "recepcion@vetarequipa.com", "clave": "Vet2026*" }
+
+### 2. Login como Asistente (200)
+# @name loginAsi
+POST {{gateway}}/gateway/auth/login
+Content-Type: application/json
+
+{ "correo": "asistente@vetarequipa.com", "clave": "Vet2026*" }
+
+### 3. Login con clave incorrecta (401, lo responde la API)
+POST {{gateway}}/gateway/auth/login
+Content-Type: application/json
+
+{ "correo": "recepcion@vetarequipa.com", "clave": "incorrecta" }
+
+@rec = {{loginRec.response.body.token}}
+@asi = {{loginAsi.response.body.token}}
+
+### 4. Listar propietarios con token (200)
+GET {{gateway}}/gateway/propietarios
+Authorization: Bearer {{asi}}
+
+### 5. Mascotas filtradas (200): el query string pasa tal cual
+GET {{gateway}}/gateway/mascotas?especie=Gato
+Authorization: Bearer {{asi}}
+
+### 6. Propietario que no existe (404)
+GET {{gateway}}/gateway/propietarios/999
+Authorization: Bearer {{asi}}
+
+### 7. GET sin token: el gateway lo deja pasar (ruta pública) pero la API exige token (401)
+GET {{gateway}}/gateway/propietarios
+
+### 8. Crear propietario SIN token: lo rechaza el GATEWAY (401) y nunca llega a la API
+POST {{gateway}}/gateway/propietarios
+Content-Type: application/json
+
+{ "dni": "90123456", "nombres": "Rosa", "apellidos": "Quispe Mamani", "telefono": "987111222" }
+
+### 9. Crear con rol Asistente: el gateway deja pasar, la API responde 403
+POST {{gateway}}/gateway/propietarios
+Content-Type: application/json
+Authorization: Bearer {{asi}}
+
+{ "dni": "90123456", "nombres": "Rosa", "apellidos": "Quispe Mamani", "telefono": "987111222" }
+
+### 10. Crear con rol Recepcionista (201): anota el propietarioId de la respuesta
+# @name crear
+POST {{gateway}}/gateway/propietarios
+Content-Type: application/json
+Authorization: Bearer {{rec}}
+
+{ "dni": "90123456", "nombres": "Rosa", "apellidos": "Quispe Mamani", "telefono": "987111222" }
+
+@nuevo = {{crear.response.body.propietarioId}}
+
+### 11. Actualizar el propietario creado (204)
+PUT {{gateway}}/gateway/propietarios/{{nuevo}}
+Content-Type: application/json
+Authorization: Bearer {{rec}}
+
+{ "nombres": "Rosa María", "apellidos": "Quispe Mamani", "telefono": "987111333", "correo": "rosa.quispe@example.com" }
+
+### 12. Eliminar el propietario creado (204)
+DELETE {{gateway}}/gateway/propietarios/{{nuevo}}
+Authorization: Bearer {{rec}}
+
+### 13. Eliminar una mascota con rol Recepcionista (403: solo el Veterinario da de baja)
+DELETE {{gateway}}/gateway/mascotas/1
+Authorization: Bearer {{rec}}
+
+### 14. Vacunas (microservicio 2) sin token: 401 del gateway
+GET {{gateway}}/gateway/vacunas
+
+### 15. Vacunas con token (200)
+GET {{gateway}}/gateway/vacunas
+Authorization: Bearer {{asi}}
+
+### 16. Una vacuna (200) y una que no existe (404)
+GET {{gateway}}/gateway/vacunas/2
+Authorization: Bearer {{asi}}
+
+###
+GET {{gateway}}/gateway/vacunas/99
+Authorization: Bearer {{asi}}
+
+### 17. Ruta que no está en ocelot.json (404 del gateway)
+GET {{gateway}}/gateway/citas
+Authorization: Bearer {{asi}}
+
+### 18. 502: DETÉN VacunasApi (Ctrl+C en su terminal o Suspend en Render) y repite
+GET {{gateway}}/gateway/vacunas/1
+Authorization: Bearer {{asi}}
+
+### 19. Directo a VacunasApi, sin gateway y sin token (401)
+GET http://localhost:5140/api/vacunas
+# GET https://vetarequipa-vacunas.onrender.com/api/vacunas

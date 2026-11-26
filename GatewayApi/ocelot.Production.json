@@ -1,0 +1,52 @@
+{
+  "Routes": [
+    {
+      "UpstreamPathTemplate": "/gateway/auth/{everything}",
+      "UpstreamHttpMethod": [ "Post" ],
+      "DownstreamPathTemplate": "/api/auth/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [ { "Host": "vetarequipa-api.onrender.com", "Port": 443 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/gateway/propietarios{everything}",
+      "UpstreamHttpMethod": [ "Get" ],
+      "DownstreamPathTemplate": "/api/propietarios{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [ { "Host": "vetarequipa-api.onrender.com", "Port": 443 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/gateway/propietarios{everything}",
+      "UpstreamHttpMethod": [ "Post", "Put", "Delete" ],
+      "DownstreamPathTemplate": "/api/propietarios{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [ { "Host": "vetarequipa-api.onrender.com", "Port": 443 } ],
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [ "Bearer" ] }
+    },
+    {
+      "UpstreamPathTemplate": "/gateway/mascotas{everything}",
+      "UpstreamHttpMethod": [ "Get" ],
+      "DownstreamPathTemplate": "/api/mascotas{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [ { "Host": "vetarequipa-api.onrender.com", "Port": 443 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/gateway/mascotas{everything}",
+      "UpstreamHttpMethod": [ "Post", "Put", "Delete" ],
+      "DownstreamPathTemplate": "/api/mascotas{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [ { "Host": "vetarequipa-api.onrender.com", "Port": 443 } ],
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [ "Bearer" ] }
+    },
+    {
+      "UpstreamPathTemplate": "/gateway/vacunas{everything}",
+      "UpstreamHttpMethod": [ "Get" ],
+      "DownstreamPathTemplate": "/api/vacunas{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [ { "Host": "vetarequipa-vacunas.onrender.com", "Port": 443 } ],
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [ "Bearer" ] }
+    }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "https://vetarequipa-gateway.onrender.com"
+  }
+}

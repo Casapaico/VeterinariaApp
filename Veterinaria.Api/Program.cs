@@ -61,7 +61,19 @@ if (jwt.Clave.Length < 32)
     throw new InvalidOperationException("Jwt:Clave debe tener al menos 32 caracteres (configúrala con user-secrets)");
 
 // Inyección de dependencias: DbContext, repositorios, servicios y AutoMapper
-builder.Services.AddDbContext<VeterinariaContext>(options => options.UseSqlServer(cadena));
+// S15: en local se usa SQL Server; en la nube, PostgreSQL (Neon). Solo cambia el proveedor de EF Core,
+// la lógica de la API es la misma. Se elige con BaseDatos:Proveedor (por defecto SqlServer).
+var proveedor = builder.Configuration["BaseDatos:Proveedor"] ?? "SqlServer";
+if (proveedor.Equals("Postgres", StringComparison.OrdinalIgnoreCase))
+{
+    // Las columnas son "timestamp" sin zona horaria, igual que DATETIME2 en SQL Server
+    AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+    builder.Services.AddDbContext<VeterinariaContext>(options => options.UseNpgsql(cadena));
+}
+else
+{
+    builder.Services.AddDbContext<VeterinariaContext>(options => options.UseSqlServer(cadena));
+}
 
 builder.Services.AddScoped<IPropietarioRepositorio, PropietarioRepositorio>();
 builder.Services.AddScoped<IMascotaRepositorio, MascotaRepositorio>();

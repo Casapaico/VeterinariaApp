@@ -1,0 +1,39 @@
+# Blueprint de Render: crea los tres servicios con plan gratuito.
+# En Render: New > Blueprint > este repositorio. Pide los valores marcados con sync: false.
+services:
+  - type: web
+    name: vetarequipa-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Veterinaria.Api/Dockerfile
+    dockerContext: .
+    envVars:
+      - key: BaseDatos__Proveedor
+        value: Postgres
+      - key: ConnectionStrings__Veterinaria
+        sync: false          # cadena Npgsql de Neon
+      - key: Jwt__Clave
+        sync: false          # la misma en los tres servicios
+
+  - type: web
+    name: vetarequipa-vacunas
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./VacunasApi/Dockerfile
+    dockerContext: ./VacunasApi
+    envVars:
+      - key: Jwt__Clave
+        sync: false
+
+  - type: web
+    name: vetarequipa-gateway
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./GatewayApi/Dockerfile
+    dockerContext: ./GatewayApi
+    envVars:
+      - key: Jwt__Clave
+        sync: false

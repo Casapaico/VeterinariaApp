@@ -4,6 +4,7 @@ Web API REST en capas para una clínica veterinaria (ASP.NET Core .NET 10 + Enti
 
 - **Semana 13:** capas, DTOs y AutoMapper.
 - **Semana 14:** autenticación con JWT, contraseñas con hash BCrypt y permisos por rol.
+- **Semana 15:** microservicios con un API Gateway (Ocelot) y despliegue en la nube. Ver [Semana 15](#semana-15-microservicios-con-ocelot).
 
 La API registra a los propietarios y a sus mascotas, permite buscar mascotas por especie, raza, peso o dueño y aplica las reglas de la clínica (DNI único, máximo de mascotas por propietario, no borrar a un propietario que aún tiene mascotas y correo de usuario único).
 
@@ -109,3 +110,72 @@ Viven en la capa Negocio y lanzan `ReglaNegocioException`; el controlador la con
 2. No se elimina un propietario que tiene mascotas registradas.
 3. Un propietario tiene como máximo 5 mascotas (al registrar una mascota o al cambiarla de dueño).
 4. El correo del usuario no se repite (sin distinguir mayúsculas).
+
+## Semana 15: microservicios con Ocelot
+
+El cliente solo conoce la dirección del **gateway**; el gateway enruta hacia dos microservicios independientes.
+
+```
+                       ┌──────────────────────────────┐
+ Cliente  ──HTTP──►    │ GatewayApi (Ocelot)          │ ──► Veterinaria.Api  (S14, 4 capas, JWT, BD)
+ (Postman, .http)      │ valida JWT + enruta          │ ──► VacunasApi       (datos en memoria, JWT)
+                       └──────────────────────────────┘
+```
+
+| Proyecto | Puerto local | Nube (Render) | Qué es |
+|---|---|---|---|
+| `GatewayApi` | 5100 | https://vetarequipa-gateway.onrender.com | Único punto de entrada: rutas en `ocelot.json` y validación del token |
+| `Veterinaria.Api` | 5130 | https://vetarequipa-api.onrender.com | La API en capas con JWT de la S14, sin cambios en su lógica |
+| `VacunasApi` | 5140 | https://vetarequipa-vacunas.onrender.com | Catálogo de vacunas de la clínica (en memoria); también valida el token |
+
+Los tres comparten solo la configuración `Jwt` (misma clave, emisor `Veterinaria.Api` y audiencia `Veterinaria.Clientes`). No comparten base de datos ni clases.
+
+### Rutas del gateway
+
+| Upstream (cliente → gateway) | Método | Downstream local | Downstream nube | Token en el gateway |
+|---|---|---|---|---|
+| `/gateway/auth/{everything}` | POST | `localhost:5130/api/auth/{everything}` | `vetarequipa-api.onrender.com:443` | No |
+| `/gateway/propietarios{everything}` | GET | `localhost:5130/api/propietarios{everything}` | `vetarequipa-api.onrender.com:443` | No (la API sí lo pide) |
+| `/gateway/propietarios{everything}` | POST, PUT, DELETE | `localhost:5130/api/propietarios{everything}` | `vetarequipa-api.onrender.com:443` | Sí |
+| `/gateway/mascotas{everything}` | GET | `localhost:5130/api/mascotas{everything}` | `vetarequipa-api.onrender.com:443` | No (la API sí lo pide) |
+| `/gateway/mascotas{everything}` | POST, PUT, DELETE | `localhost:5130/api/mascotas{everything}` | `vetarequipa-api.onrender.com:443` | Sí |
+| `/gateway/vacunas{everything}` | GET | `localhost:5140/api/vacunas{everything}` | `vetarequipa-vacunas.onrender.com:443` | Sí |
+
+- `{everything}` pegado al recurso cubre `/gateway/mascotas`, `/gateway/mascotas/3` y `/gateway/mascotas?especie=Gato`.
+- En la S14 todas las consultas ya exigían token: en el gateway los GET son públicos, pero la API sigue respondiendo 401 sin token porque su lógica no se cambió.
+- `ocelot.json` apunta a `localhost`; en la nube (`ASPNETCORE_ENVIRONMENT=Production`) se carga además `ocelot.Production.json`, que reemplaza los hosts por los públicos con `https` y puerto 443.
+
+### Ejecutar en local
+
+```bash
+# La clave JWT debe ser la MISMA en los tres proyectos (user-secrets, no está en el repo)
+dotnet user-secrets set "Jwt:Clave" "<la-misma-clave>" --project GatewayApi
+dotnet user-secrets set "Jwt:Clave" "<la-misma-clave>" --project VacunasApi
+
+# Tres terminales
+dotnet run --project Veterinaria.Api --launch-profile http
+dotnet run --project VacunasApi
+dotnet run --project GatewayApi
+```
+
+Pruebas: `Gateway.http` (REST Client) o `./scripts/probar-gateway.sh [url-del-gateway]`.
+
+| Caso | Respuesta | Quién responde |
+|---|---|---|
+| Login, GET con token | 200 | API / VacunasApi |
+| Crear propietario con rol Recepcionista | 201 | API |
+| Actualizar o eliminar propietario | 204 | API |
+| Escritura o vacunas sin token, o token alterado | 401 | Gateway |
+| GET de la API sin token | 401 | API |
+| Crear propietario con rol Asistente, eliminar mascota con rol Recepcionista | 403 | API |
+| Id inexistente | 404 | API / VacunasApi |
+| Ruta o método que no está en `ocelot.json` | 404 | Gateway |
+| VacunasApi detenido | 502 | Gateway |
+| VacunasApi directo sin token | 401 | VacunasApi |
+
+### Despliegue
+
+- **Hosting:** Render, plan gratuito, con Docker (`render.yaml` crea los tres servicios como Blueprint).
+- **Base de datos:** Neon (PostgreSQL serverless, plan gratuito). Script: `db/postgres/VeterinariaDB-postgres.sql`.
+- La API elige el proveedor con `BaseDatos__Proveedor` (`SqlServer` por defecto, `Postgres` en la nube); solo cambia el `UseSqlServer`/`UseNpgsql`.
+- Variables de entorno en Render (no están en el repositorio): `Jwt__Clave` en los tres servicios y `ConnectionStrings__Veterinaria` en la API.
