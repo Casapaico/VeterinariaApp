@@ -7,3 +7,6 @@ obj/
 .env
 scripts/.env
 capturas/tmp/
+
+# Capturas de la S15 (solo para el Word, no van al repositorio)
+capturas/s15/
